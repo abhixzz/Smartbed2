@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Trash2, CheckCircle, Droplet, Utensils, Pill } from 'lucide-react';
+import { MoreVertical, Trash2, Droplet, Utensils, Pill } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 
 type Reminder = Medication & {
     type: 'med' | 'food' | 'water';
@@ -31,6 +32,10 @@ export function MedicationSchedule({ medications: initialMedications }: { medica
 
     const handleDelete = (id: string) => {
         setReminders(reminders.filter(r => r.id !== id));
+    };
+
+    const handleTimeChange = (id: string, newTime: string) => {
+        setReminders(reminders.map(r => r.id === id ? { ...r, time: newTime } : r).sort((a, b) => a.time.localeCompare(b.time)));
     };
 
   const icons = {
@@ -57,7 +62,16 @@ export function MedicationSchedule({ medications: initialMedications }: { medica
                     <p className={cn('font-semibold', item.administered && 'line-through')}>{item.name}</p>
                     {item.dosage && <p className={cn('text-sm text-muted-foreground', item.administered && 'line-through')}>{item.dosage}</p>}
                 </div>
-                <div className={cn('font-mono text-sm', item.administered ? 'text-muted-foreground line-through' : 'font-semibold')}>{item.time}</div>
+                <Input
+                    type="time"
+                    value={item.time}
+                    onChange={(e) => handleTimeChange(item.id, e.target.value)}
+                    className={cn(
+                        'font-mono text-sm w-28 p-1 h-8',
+                        item.administered ? 'text-muted-foreground line-through border-none bg-transparent' : 'font-semibold',
+                    )}
+                    disabled={item.administered}
+                />
                 <Checkbox
                     id={`reminder-${item.id}`}
                     checked={item.administered}
