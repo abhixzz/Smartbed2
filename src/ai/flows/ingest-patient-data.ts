@@ -9,8 +9,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 
 // Schemas for data chunks
 const VitalSignSchema = z.object({
@@ -47,6 +47,21 @@ const IngestDataOutputSchema = z.object({
 });
 export type IngestDataOutput = z.infer<typeof IngestDataOutputSchema>;
 
+// Initialize Firebase Admin SDK
+function initializeFirebaseAdmin() {
+  if (getApps().length === 0) {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+       initializeApp({
+        credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+       });
+    } else {
+        // For local development without service account
+        initializeApp();
+    }
+  }
+  return getFirestore();
+}
+
 
 export async function ingestPatientData(input: IngestDataInput): Promise<IngestDataOutput> {
   return ingestPatientDataFlow(input);
@@ -60,37 +75,37 @@ const ingestPatientDataFlow = ai.defineFlow(
     outputSchema: IngestDataOutputSchema,
   },
   async (input) => {
-    const { firestore } = initializeFirebase();
+    const firestore = initializeFirebaseAdmin();
     const { patientId, vitalSigns, movementPattern, bedStatus } = input;
     const docIds: Record<string, string> = {};
 
     try {
       if (vitalSigns) {
-        const vitalSignsRef = collection(firestore, 'patients', patientId, 'vitalSigns');
-        const docRef = await addDoc(vitalSignsRef, {
+        const vitalSignsRef = firestore.collection(`patients/${patientId}/vitalSigns`);
+        const docRef = await vitalSignsRef.add({
           ...vitalSigns,
           patientId,
-          timestamp: serverTimestamp(),
+          timestamp: new Date(),
         });
         docIds.vitalSign = docRef.id;
       }
 
       if (movementPattern) {
-        const movementPatternsRef = collection(firestore, 'patients', patientId, 'movementPatterns');
-        const docRef = await addDoc(movementPatternsRef, {
+        const movementPatternsRef = firestore.collection(`patients/${patientId}/movementPatterns`);
+        const docRef = await movementPatternsRef.add({
           ...movementPattern,
           patientId,
-          timestamp: serverTimestamp(),
+          timestamp: new Date(),
         });
         docIds.movementPattern = docRef.id;
       }
 
       if (bedStatus) {
-        const bedStatusesRef = collection(firestore, 'patients', patientId, 'bedStatuses');
-        const docRef = await addDoc(bedStatusesRef, {
+        const bedStatusesRef = firestore.collection(`patients/${patientId}/bedStatuses`);
+        const docRef = await bedStatusesRef.add({
           ...bedStatus,
           patientId,
-          timestamp: serverTimestamp(),
+          timestamp: new Date(),
         });
         docIds.bedStatus = docRef.id;
       }
