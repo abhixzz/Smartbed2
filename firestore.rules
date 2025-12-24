@@ -1,0 +1,260 @@
+/**
+ * Core Philosophy:
+ * This ruleset implements a dual-access security model tailored for the MediVue application.
+ * It strictly separates private user data from shared clinical data. User-specific information,
+ * like profiles and settings, is governed by a strict ownership model where only the authenticated
+ * user can access their own data. Clinical data, under the '/patients' collection, is designed
+ * for collaborative access by authenticated healthcare professionals. In this prototyping phase,
+ * any signed-in user is granted access to patient data to facilitate rapid development, with the
+ * expectation that a more granular role-based system (e.g., doctors, nurses) will be implemented later.
+ *
+ * Data Structure:
+ * The data is organized into two primary top-level collections:
+ * 1. `/users/{userId}`: Contains user-specific subcollections like `/profile`. All data under
+ *    this path is considered private to the user specified by {userId}.
+ * 2. `/patients/{patientId}`: A top-level collection for clinical data. Each document represents a
+ *    patient and contains numerous subcollections for different data types (e.g., vitalSigns,
+ *    medications, alerts). This structure isolates patient data and allows for flexible queries.
+ *
+ * Key Security Decisions:
+ * - User Data Isolation: All access to `/users/{userId}/**` paths requires the requestor's UID
+ *   to match the `{userId}` in the path, ensuring users can only ever access their own data tree.
+ * - Collaborative Patient Data: As a placeholder for a future role-based system, all authenticated
+ *   users are permitted to read and write to the `/patients` collection and its subcollections.
+ *   This is a deliberate choice for prototyping, and anonymous access is strictly forbidden.
+ * - Relational Integrity: Rules enforce that documents created within a specific context (e.g., a
+ *   vital sign for patient 'p123') must contain a corresponding ID field (e.g., `patientId: 'p123'`).
+ *   These linking fields are immutable after creation to prevent data from being re-associated.
+ *
+ * Denormalization for Authorization:
+ * The security model relies on path-based authorization. For user data, the user's UID is part
+ * of the document path (`/users/{userId}`), eliminating the need for extra database reads to verify
+ * ownership. For patient subcollections, each document (e.g., a VitalSign) contains a denormalized
+ * `patientId` field, which is validated against the path to ensure data consistency without costly lookups.
+ *
+ * Structural Segregation:
+ * The clear separation between the `/users` and `/patients` collections creates a secure boundary
+ * between private user settings and shared clinical information. This segregation simplifies rules
+ * and makes list operations inherently more secure, as a query on one collection cannot accidentally
+ * leak data from the other.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership security model.
+     * @param userId The user ID to check against the request's auth UID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Validates that a user is creating their own profile document and that the
+     * document's internal 'id' field correctly links back to their UID.
+     * @param userId The user ID from the path.
+     */
+    function isCreatingOwnProfile(userId) {
+      return isOwner(userId) && request.resource.data.id == userId;
+    }
+
+    /**
+     * Validates that a user is updating their own profile and ensures the
+     * ownership link ('id' field) remains unchanged.
+     * @param userId The user ID from the path.
+     */
+    function isUpdatingOwnProfile(userId) {
+      // Note: isOwner() implicitly checks that resource != null is not needed here
+      // because the rule chain will use isOwner() && resource != null && this_function().
+      // The primary job here is to enforce immutability of the ID.
+      return isOwner(userId) && request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates creation of a patient document. Ensures the user is signed in
+     * and the document's internal 'id' is consistent with the document's path.
+     * @param patientId The patient ID from the path.
+     */
+    function isCreatingValidPatient(patientId) {
+      return isSignedIn() && request.resource.data.id == patientId;
+    }
+
+    /**
+     * Validates updates to a patient document. Ensures the user is signed in
+     * and the patient 'id' field is immutable.
+     */
+    function isUpdatingValidPatient() {
+      return isSignedIn() && request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates creation of a subcollection document for a patient (e.g., VitalSign).
+     * Ensures the user is signed in and the new document's 'patientId' field
+     * matches the patient's ID in the path.
+     * @param patientId The parent patient ID from the path.
+     */
+    function isCreatingValidPatientSubDoc(patientId) {
+      return isSignedIn() && request.resource.data.patientId == patientId;
+    }
+
+    /**
+     * Validates updates to a patient subcollection document. Ensures the user is
+     * signed in and the 'patientId' link is immutable.
+     */
+    function isUpdatingValidPatientSubDoc() {
+      return isSignedIn() && request.resource.data.patientId == resource.data.patientId;
+    }
+
+
+    // -------------------------------------------------------------------------
+    // User Data Rules (/users)
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents. Only the owner of the profile
+     * can read, create, update, or delete their own information.
+     * @path /users/{userId}/profile/{profileId}
+     * @allow (get) A logged-in user with uid 'user123' reading their own profile at '/users/user123/profile/myProfile'.
+     * @deny (update) A user with uid 'user456' trying to update a document at '/users/user123/profile/myProfile'.
+     * @principle Restricts access to a user's own data tree based on their auth UID.
+     */
+    match /users/{userId}/profile/{profileId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isCreatingOwnProfile(userId);
+      allow update: if isOwner(userId) && resource != null && isUpdatingOwnProfile(userId);
+      allow delete: if isOwner(userId) && resource != null;
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Clinical Data Rules (/patients)
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Manages core patient documents. In this prototyping phase, any authenticated user
+     * (e.g., a healthcare provider) can manage patient records.
+     * @path /patients/{patientId}
+     * @allow (create) Any authenticated user creating a new patient document.
+     * @deny (create) An anonymous, unauthenticated user trying to create a patient.
+     * @principle Allows collaborative access for all authenticated users, pending a future role-based system.
+     */
+    match /patients/{patientId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatient(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatient();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient vital signs. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/vitalSigns/{vitalSignId}
+     * @allow (get) Any authenticated user reading a vital sign record.
+     * @deny (get) An anonymous user attempting to read any vital sign record.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/vitalSigns/{vitalSignId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient movement patterns. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/movementPatterns/{movementPatternId}
+     * @allow (create) Any authenticated user creating a movement pattern record for patient 'p123', with `patientId: 'p123'` in the data.
+     * @deny (create) An authenticated user creating a record for patient 'p123' but with `patientId: 'p456'` in the data.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/movementPatterns/{movementPatternId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient bed status records. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/bedStatuses/{bedStatusId}
+     * @allow (update) Any authenticated user updating an existing bed status record.
+     * @deny (update) An authenticated user attempting to update a non-existent record.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/bedStatuses/{bedStatusId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient medication records. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/medications/{medicationId}
+     * @allow (list) Any authenticated user listing medications for a patient.
+     * @deny (list) An anonymous user trying to list medications.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/medications/{medicationId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient alerts. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/alerts/{alertId}
+     * @allow (get) Any authenticated user reading a specific alert.
+     * @deny (get) An anonymous user trying to read an alert.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/alerts/{alertId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient pressure sore risk assessments. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/pressureSoreRisks/{pressureSoreRiskId}
+     * @allow (create) Any authenticated user creating a risk assessment record.
+     * @deny (delete) An anonymous user trying to delete a record.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/pressureSoreRisks/{pressureSoreRiskId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Secures patient reminders. Access is granted to any authenticated user.
+     * @path /patients/{patientId}/reminders/{reminderId}
+     * @allow (delete) Any authenticated user deleting an existing reminder.
+     * @deny (delete) Any authenticated user trying to delete a reminder that does not exist.
+     * @principle Enforces relational integrity by ensuring subcollection documents correctly reference their parent patient.
+     */
+    match /patients/{patientId}/reminders/{reminderId} {
+      allow get, list: if isSignedIn();
+      allow create: if isCreatingValidPatientSubDoc(patientId);
+      allow update: if isSignedIn() && resource != null && isUpdatingValidPatientSubDoc();
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+  }
+}

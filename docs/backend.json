@@ -1,0 +1,560 @@
+{
+  "entities": {
+    "Patient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Patient",
+      "type": "object",
+      "description": "Represents a patient in the MediVue system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Patient entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Patient's full name."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Patient's date of birth.",
+          "format": "date-time"
+        },
+        "gender": {
+          "type": "string",
+          "description": "Patient's gender."
+        },
+        "medicalHistory": {
+          "type": "string",
+          "description": "Patient's medical history."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Patient's contact number."
+        },
+        "admissionDate": {
+          "type": "string",
+          "description": "Date of patient's admission.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "dateOfBirth",
+        "gender"
+      ]
+    },
+    "VitalSign": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VitalSign",
+      "type": "object",
+      "description": "Represents a vital sign measurement for a patient.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the VitalSign entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N VitalSign)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the vital sign measurement.",
+          "format": "date-time"
+        },
+        "bloodPressure": {
+          "type": "string",
+          "description": "Blood pressure measurement."
+        },
+        "pulse": {
+          "type": "number",
+          "description": "Pulse rate measurement."
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Body temperature measurement."
+        },
+        "spo2": {
+          "type": "number",
+          "description": "SpO2 measurement."
+        },
+        "respiratoryRate": {
+          "type": "number",
+          "description": "Respiratory rate measurement."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "timestamp",
+        "bloodPressure",
+        "pulse",
+        "temperature",
+        "spo2",
+        "respiratoryRate"
+      ]
+    },
+    "MovementPattern": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MovementPattern",
+      "type": "object",
+      "description": "Represents a patient's movement pattern data.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MovementPattern entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N MovementPattern)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the movement pattern data.",
+          "format": "date-time"
+        },
+        "movementData": {
+          "type": "string",
+          "description": "Movement data, could be coordinates or activity level."
+        },
+        "sleepData": {
+          "type": "string",
+          "description": "Sleep data indicating sleep stages or patterns."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "timestamp",
+        "movementData",
+        "sleepData"
+      ]
+    },
+    "BedStatus": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BedStatus",
+      "type": "object",
+      "description": "Represents the status of a patient's bed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BedStatus entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N BedStatus)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the bed status update.",
+          "format": "date-time"
+        },
+        "position": {
+          "type": "string",
+          "description": "Bed position (e.g., flat, elevated)."
+        },
+        "adjustmentStatus": {
+          "type": "string",
+          "description": "Bed adjustment status (e.g., height, angle)."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "timestamp",
+        "position",
+        "adjustmentStatus"
+      ]
+    },
+    "Medication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Medication",
+      "type": "object",
+      "description": "Represents a medication prescribed to a patient.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Medication entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N Medication)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the medication."
+        },
+        "dosage": {
+          "type": "string",
+          "description": "Dosage of the medication."
+        },
+        "frequency": {
+          "type": "string",
+          "description": "Frequency of medication administration."
+        },
+        "lastAdministered": {
+          "type": "string",
+          "description": "Timestamp of the last medication administration.",
+          "format": "date-time"
+        },
+        "nextDose": {
+          "type": "string",
+          "description": "Timestamp of the next medication dose.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "name",
+        "dosage",
+        "frequency"
+      ]
+    },
+    "Alert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Alert",
+      "type": "object",
+      "description": "Represents an alert or notification for a patient.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Alert entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N Alert)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the alert.",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority of the alert (Emergency, High, Medium, Low)."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of alert (Fall Detection, Vital Sign Breach, etc.)."
+        },
+        "message": {
+          "type": "string",
+          "description": "Message associated with the alert."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Flag indicating if the alert has been read."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "timestamp",
+        "priority",
+        "type",
+        "message"
+      ]
+    },
+    "PressureSoreRisk": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PressureSoreRisk",
+      "type": "object",
+      "description": "Represents the risk assessment for pressure sores.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PressureSoreRisk entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N PressureSoreRisk)"
+        },
+        "assessmentDate": {
+          "type": "string",
+          "description": "Date of the risk assessment.",
+          "format": "date-time"
+        },
+        "riskLevel": {
+          "type": "string",
+          "description": "Risk level for pressure sores (High, Medium, Low)."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Rationale for the risk assessment (based on GenAI analysis)."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "assessmentDate",
+        "riskLevel",
+        "rationale"
+      ]
+    },
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a reminder for food, water, or medicine intake.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Reminder entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N Reminder)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp for the reminder.",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of reminder (Food, Water, Medicine)."
+        },
+        "message": {
+          "type": "string",
+          "description": "Message for the reminder."
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Flag indicating if the reminder has been completed."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "timestamp",
+        "type",
+        "message"
+      ]
+    },
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile within the MediVue system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "User's username."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's display name."
+        },
+        "themePreference": {
+          "type": "string",
+          "description": "User's preferred theme (e.g., light, dark)."
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "Timestamp of the user's last login.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "displayName"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/profile",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information.  Accessible only by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}",
+        "definition": {
+          "entityName": "Patient",
+          "schema": {
+            "$ref": "#/backend/entities/Patient"
+          },
+          "description": "Stores patient data. No user-specific ownership.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/vitalSigns/{vitalSignId}",
+        "definition": {
+          "entityName": "VitalSign",
+          "schema": {
+            "$ref": "#/backend/entities/VitalSign"
+          },
+          "description": "Stores vital signs data for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "vitalSignId",
+              "description": "The unique ID of the vital sign measurement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/movementPatterns/{movementPatternId}",
+        "definition": {
+          "entityName": "MovementPattern",
+          "schema": {
+            "$ref": "#/backend/entities/MovementPattern"
+          },
+          "description": "Stores movement patterns for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "movementPatternId",
+              "description": "The unique ID of the movement pattern data."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/bedStatuses/{bedStatusId}",
+        "definition": {
+          "entityName": "BedStatus",
+          "schema": {
+            "$ref": "#/backend/entities/BedStatus"
+          },
+          "description": "Stores bed status updates for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "bedStatusId",
+              "description": "The unique ID of the bed status update."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/medications/{medicationId}",
+        "definition": {
+          "entityName": "Medication",
+          "schema": {
+            "$ref": "#/backend/entities/Medication"
+          },
+          "description": "Stores medication information for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "medicationId",
+              "description": "The unique ID of the medication."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/alerts/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": {
+            "$ref": "#/backend/entities/Alert"
+          },
+          "description": "Stores alerts for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "alertId",
+              "description": "The unique ID of the alert."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/pressureSoreRisks/{pressureSoreRiskId}",
+        "definition": {
+          "entityName": "PressureSoreRisk",
+          "schema": {
+            "$ref": "#/backend/entities/PressureSoreRisk"
+          },
+          "description": "Stores pressure sore risk assessments for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "pressureSoreRiskId",
+              "description": "The unique ID of the pressure sore risk assessment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/patients/{patientId}/reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": {
+            "$ref": "#/backend/entities/Reminder"
+          },
+          "description": "Stores reminders for each patient.",
+          "params": [
+            {
+              "name": "patientId",
+              "description": "The unique ID of the patient."
+            },
+            {
+              "name": "reminderId",
+              "description": "The unique ID of the reminder."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure data security, scalability, and maintainability for the MediVue application. We leverage path-based ownership for user-specific data and denormalization for authorization independence. The structure is segregated to ensure that collections contain documents with homogenous security postures.\n\n*   `/users/{userId}/profile`: Stores user profile information.  Path-based ownership ensures only the user can access their profile.\n*   `/patients/{patientId}`: Stores patient data.  No user-specific ownership to ensure easy access by care providers (roles to be defined later).\n*   `/patients/{patientId}/vitalSigns/{vitalSignId}`: Stores vital signs data for each patient. Follows hierarchical path-based ownership, simplifying rules.\n*   `/patients/{patientId}/movementPatterns/{movementPatternId}`: Stores movement patterns for each patient, structured under the patient.\n*   `/patients/{patientId}/bedStatuses/{bedStatusId}`: Stores bed status updates for each patient.\n*   `/patients/{patientId}/medications/{medicationId}`: Stores medication information for each patient.\n*   `/patients/{patientId}/alerts/{alertId}`: Stores alerts for each patient.  Ensures alerts are easily queryable and manageable within the patient context.\n*   `/patients/{patientId}/pressureSoreRisks/{pressureSoreRiskId}`: Stores pressure sore risk assessments for each patient.\n*   `/patients/{patientId}/reminders/{reminderId}`: Stores reminders for each patient.\n\nThis structure prioritizes Authorization Independence by avoiding `get()` calls in security rules.  QAPs are supported by the structural segregation, allowing secure `list` operations within each subcollection, as rules can be applied consistently to all documents within a given collection. Ownership is clearly defined through hierarchical paths. Invariants are enforced by the structure, ensuring data integrity for ownership and timestamps."
+  }
+}
