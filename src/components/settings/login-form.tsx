@@ -34,7 +34,6 @@ type RegisterValues = z.infer<typeof registerSchema>;
 
 export function LoginForm() {
   const [loading, setLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
   const auth = useAuth();
   const { toast } = useToast();
 
@@ -50,28 +49,46 @@ export function LoginForm() {
 
   const onLoginSubmit = (data: LoginValues) => {
     setLoading(true);
-    setAuthError(null);
-    try {
-        initiateEmailSignIn(auth, data.email, data.password);
-        toast({ title: "Login initiated", description: "Please wait while we log you in." });
-    } catch (error: any) {
-        setAuthError(error.message);
-    } finally {
+    initiateEmailSignIn(auth, data.email, data.password)
+      .then(() => {
+        toast({ title: "Login successful!", description: "Welcome back." });
+      })
+      .catch((error) => {
+        let description = "An unknown error occurred.";
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            description = "Invalid email or password. Please try again.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description,
+        });
+      })
+      .finally(() => {
         setLoading(false);
-    }
+      });
   };
 
   const onRegisterSubmit = (data: RegisterValues) => {
     setLoading(true);
-    setAuthError(null);
-    try {
-        initiateEmailSignUp(auth, data.email, data.password);
-        toast({ title: "Registration initiated", description: "Please wait while we create your account." });
-    } catch (error: any) {
-        setAuthError(error.message);
-    } finally {
+    initiateEmailSignUp(auth, data.email, data.password)
+      .then(() => {
+        toast({ title: "Registration successful!", description: "You are now logged in." });
+      })
+      .catch((error) => {
+        let description = "An unknown error occurred.";
+        if (error.code === 'auth/email-already-in-use') {
+            description = "This email is already registered. Please log in.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Registration Failed",
+          description,
+        });
+      })
+      .finally(() => {
         setLoading(false);
-    }
+      });
   }
 
   return (
