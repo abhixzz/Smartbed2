@@ -7,7 +7,7 @@ import type { VariantProps } from 'class-variance-authority';
 import type { ReactElement } from 'react';
 import React from 'react';
 
-const priorityMap: Record<AlertType['priority'], {
+const priorityMap: Record<AlertType['priority'] | 'Unknown', {
   icon: ReactElement,
   variant: VariantProps<typeof Badge>['variant'],
   iconBgClass: string,
@@ -17,6 +17,7 @@ const priorityMap: Record<AlertType['priority'], {
   High: { icon: <TriangleAlert className="h-4 w-4" />, variant: 'destructive', iconBgClass: 'bg-destructive/20', iconClass: 'text-destructive' },
   Medium: { icon: <AlertCircle className="h-4 w-4" />, variant: 'default', iconBgClass: 'bg-primary/20', iconClass: 'text-primary' },
   Low: { icon: <Bell className="h-4 w-4" />, variant: 'secondary', iconBgClass: 'bg-secondary', iconClass: 'text-secondary-foreground' },
+  Unknown: { icon: <Bell className="h-4 w-4" />, variant: 'secondary', iconBgClass: 'bg-secondary', iconClass: 'text-secondary-foreground' },
 };
 
 export function Alerts({ alerts }: { alerts: AlertType[] }) {
@@ -31,7 +32,7 @@ export function Alerts({ alerts }: { alerts: AlertType[] }) {
         ) : (
           <div className="space-y-4">
             {alerts.map((alert) => {
-              const priorityInfo = priorityMap[alert.priority];
+              const priorityInfo = priorityMap[alert.priority] || priorityMap.Unknown;
               return (
                 <div key={alert.id} className="flex items-start gap-4">
                   <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', priorityInfo.iconBgClass)}>
