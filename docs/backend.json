@@ -341,11 +341,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "User's username."
+          "description": "Unique identifier for the UserProfile entity, maps to Firebase Auth UID."
         },
         "email": {
           "type": "string",
@@ -368,9 +364,7 @@
       },
       "required": [
         "id",
-        "username",
-        "email",
-        "displayName"
+        "email"
       ]
     }
   },
@@ -383,17 +377,21 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/profile",
+        "path": "/users/{userId}/profile/{profileId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profile information.  Accessible only by the user.",
+          "description": "Stores user profile information. Accessible only by the user. {profileId} is a singleton, typically 'main'.",
           "params": [
             {
               "name": "userId",
               "description": "The unique ID of the user."
+            },
+            {
+              "name": "profileId",
+              "description": "The unique ID for the profile document, usually a fixed value like 'main'."
             }
           ]
         }
