@@ -1,4 +1,4 @@
-import { getPatientById } from '@/lib/data';
+import { getPatientById, patients } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { VitalSigns } from '@/components/vital-signs';
 import { MovementChart } from '@/components/movement-chart';
@@ -65,9 +65,7 @@ export default function PatientPage({ params }: PatientPageProps) {
 }
 
 export async function generateStaticParams() {
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' }
-  ];
+  return patients.map((patient) => ({
+    id: patient.id,
+  }));
 }
